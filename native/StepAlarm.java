@@ -1,4 +1,4 @@
-package com.riddsc.boxfitpro;
+package com.riddsc.satronhoboxfit;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -12,7 +12,7 @@ import android.os.Looper;
 
 /** Toma una lectura del sensor de pasos cada ~15 minutos y vuelve a programarse al reiniciar el teléfono. */
 public class StepAlarm extends BroadcastReceiver {
-    static final String TICK = "com.riddsc.boxfitpro.STEP_TICK";
+    static final String TICK = "com.riddsc.satronhoboxfit.STEP_TICK";
 
     @Override
     public void onReceive(Context ctx, Intent intent) {

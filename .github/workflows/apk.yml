@@ -45,10 +45,10 @@ jobs:
         cp node_modules/@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2 www/fonts/
         for w in 400 600 700; do cp node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-$w-normal.woff2 www/fonts/; done
         ls -la www/fonts
-        npx cap init "Satronho BoxFit" "com.riddsc.boxfitpro" --web-dir www
+        npx cap init "Satronho BoxFit" "com.riddsc.satronhoboxfit" --web-dir www
         npx cap add android
         # Código nativo propio: pantalla encendida durante el timer y contador de pasos
-        JAVA_DIR=android/app/src/main/java/com/riddsc/boxfitpro
+        JAVA_DIR=android/app/src/main/java/com/riddsc/satronhoboxfit
         cp native/MainActivity.java native/KeepAwakePlugin.java native/StepsPlugin.java native/StepStore.java native/StepAlarm.java native/WidgetPlugin.java native/BoxFitWidget.java $JAVA_DIR/
         # Widget de la pantalla de inicio (diseño, fondos y barras)
         cp -r native/res/* android/app/src/main/res/

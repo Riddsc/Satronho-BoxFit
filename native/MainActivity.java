@@ -1,4 +1,4 @@
-package com.riddsc.boxfitpro;
+package com.riddsc.satronhoboxfit;
 
 import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;

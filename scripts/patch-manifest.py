@@ -29,7 +29,7 @@ extra = '''        <activity-alias android:name="ViewPermissionUsageActivity" an
             <intent-filter><action android:name="android.intent.action.VIEW_PERMISSION_USAGE" /><category android:name="android.intent.category.HEALTH_PERMISSIONS" /></intent-filter>
         </activity-alias>
         <receiver android:name=".StepAlarm" android:exported="false">
-            <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /><action android:name="android.intent.action.MY_PACKAGE_REPLACED" /><action android:name="com.riddsc.boxfitpro.STEP_TICK" /></intent-filter>
+            <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /><action android:name="android.intent.action.MY_PACKAGE_REPLACED" /><action android:name="com.riddsc.satronhoboxfit.STEP_TICK" /></intent-filter>
         </receiver>
         <receiver android:name=".BoxFitWidget" android:exported="false" android:label="Satronho BoxFit">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>

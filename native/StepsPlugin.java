@@ -1,4 +1,4 @@
-package com.riddsc.boxfitpro;
+package com.riddsc.satronhoboxfit;
 
 import android.Manifest;
 import android.content.Context;
