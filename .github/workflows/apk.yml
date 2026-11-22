@@ -29,7 +29,7 @@ jobs:
         KP: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       run: |
         if [ -z "$KS" ] || [ -z "$KP" ]; then
-          echo "::error title=Falta la llave de firma::Agrega ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS y ANDROID_KEY_PASSWORD en Settings > Secrets and variables > Actions"
+          echo "::error title=Falta la llave de firma::Agrega ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD y ANDROID_KEY_PASSWORD en Settings > Secrets and variables > Actions"
           exit 1
         fi
 
@@ -108,7 +108,7 @@ jobs:
                 satronho {
                     storeFile file(System.getenv("RUNNER_TEMP") + "/release.jks")
                     storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
-                    keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                    keyAlias System.getenv("ANDROID_KEY_ALIAS") ?: "satronhoboxfit"
                     keyPassword System.getenv("ANDROID_KEY_PASSWORD")
                 }
             }
