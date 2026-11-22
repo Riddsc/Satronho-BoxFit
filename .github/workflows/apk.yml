@@ -44,6 +44,8 @@ jobs:
         # Fuentes dentro del APK (la app funciona sin internet)
         cp node_modules/@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2 www/fonts/
         for w in 400 600 700; do cp node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-$w-normal.woff2 www/fonts/; done
+        # El núcleo JS de Capacitor, de la misma versión que el lado nativo (la app no usa empaquetador)
+        cp node_modules/@capacitor/core/dist/capacitor.js www/js/vendor/capacitor.js
         ls -la www/fonts
         npx cap init "Satronho BoxFit" "com.riddsc.satronhoboxfit" --web-dir www
         npx cap add android
