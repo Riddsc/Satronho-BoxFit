@@ -609,3 +609,7 @@ body.ppgwhite .sfstatusbg{background:#fff!important}
 body.ppgwhite #formModal .sheet{--text:#17161c;--muted:#55525c;--dim:#77737f;--panel:#fff;--panel2:#f0eff3;--line:#e2e0e6}
 .sfhrrow{width:100%;text-align:left}
 .sfhrrow .ed{font-size:16px;opacity:.7}
+/* 4.4: en pantallas angostas (o con letra grande) el título de las tarjetas de Inicio no se monta sobre el ícono */
+#home .sfhub:not(.wide):not(.slim){min-height:146px}
+#home .sfhub:not(.wide):not(.slim) b{font-size:min(28px,7.4vw);position:relative;z-index:1}
+#home .sfhub:not(.wide):not(.slim) .ic{font-size:min(40px,10.5vw)}

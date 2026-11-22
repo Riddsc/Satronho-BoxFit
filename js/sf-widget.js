@@ -15,8 +15,13 @@ function push(){
     kcal: { on: o.kcal, t: `Calorías ${SF.nf(b.active)} / ${SF.nf(G.kcal)}`, p: pc(b.active, G.kcal) },
     min: { on: o.min, t: `Minutos ${b.min} / ${G.min}`, p: pc(b.min, G.min) },
     steps: { on: o.steps, t: `Pasos ${SF.nf(b.steps)} / ${SF.nf(G.steps)}`, p: pc(b.steps, G.steps), goal: G.steps, label: TT('Pasos'), day: todayISO(), manual: b.steps },
-    water: { on: o.water, t: `Agua ${SF.n1(w / 1000)} / ${SF.n1(wg / 1000)} L`, p: pc(w, wg) } };
-  ['kcal','min','steps','water'].forEach(k => data[k].t = TT(data[k].t) );
+    water: { on: o.water, t: `Agua ${SF.n1(w / 1000)} / ${SF.n1(wg / 1000)} L`, p: pc(w, wg) },
+    day: t };
+  // Si hoy se corrigieron los pasos a mano, el widget sigue esa corrección (StepStore.java)
+  const fx = SF.stepFix(t); if (fx){ data.steps.fixV = fx.v; data.steps.fixBase = fx.base; }
+  // Textos en cero para cuando pase la medianoche sin abrir la app (BoxFitWidget.java los usa)
+  const zero = { kcal: `Calorías 0 / ${SF.nf(G.kcal)}`, min: `Minutos 0 / ${G.min}`, steps: `Pasos 0 / ${SF.nf(G.steps)}`, water: `Agua 0 / ${SF.n1(wg / 1000)} L` };
+  ['kcal','min','steps','water'].forEach(k => { data[k].t = TT(data[k].t); data[k].t0 = TT(zero[k]); });
   const j = JSON.stringify(data); if (j === lastSent) return; lastSent = j;
   WP.update({ data: j }).catch(() => {});
 }

@@ -90,7 +90,7 @@ function goalCardHTML(){
     <div class="sfall"><div><b>${fmtKg(g.now)}</b><small>hoy</small></div><div><b>${g.done ? '✓' : (g.toGo > 0 ? '+' : '−') + fmtKg(Math.abs(g.toGo))}</b><small>${g.done ? 'logrado' : 'kg faltan'}</small></div><div><b>${g.over ? '—' : g.daysLeft}</b><small>días</small></div><div><b>${g.done || g.over ? '—' : n1(Math.abs(g.rate))}</b><small>kg/semana</small></div></div>
     ${g.done ? '<p class="hint">🎉 ¡Llegaste a tu meta! Ahora a mantenerla.</p>' : g.over ? '<p class="hint">La fecha ya pasó. Cámbiala o pon una meta nueva.</p>'
       : `${g.risky ? `<p class="warn">⚠️ Necesitarías ${n1(Math.abs(g.rate))} kg por semana: es más de lo recomendado (1 % de tu peso). ${goal.type === 'fight' ? 'Para una pelea, hazlo con tu entrenador y nunca a punta de deshidratarte.' : 'Dale más tiempo para no perder músculo.'}</p>` : ''}
-        <button class="btn" id="gmApply" style="width:100%;flex:none;margin-bottom:12px">AJUSTAR MI PLAN DE COMIDA A ESTA META</button>`}</div>`;
+        ${(() => { const a = ageOf(me); return a && a.y < 18; })() ? '<p class="warn">Eres menor de 18 años: para cambiar tu peso (o dar el de una pelea) hazlo con tu entrenador y un médico o nutricionista. La app no ajusta tu comida para eso.</p>' : '<button class="btn" id="gmApply" style="width:100%;flex:none;margin-bottom:12px">AJUSTAR MI PLAN DE COMIDA A ESTA META</button>'}`}</div>`;
 }
 function bindGoalCard(root){
   const e = root.querySelector('#gmEdit'); if (e) e.addEventListener('click', openGoal);

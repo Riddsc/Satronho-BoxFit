@@ -144,8 +144,12 @@ final class StepStore {
             JSONObject d = new JSONObject(wp.getString("data", "{}"));
             JSONObject s = d.optJSONObject("steps");
             if (s == null || !s.has("goal")) return;
-            long base = s.optString("day").equals(day(System.currentTimeMillis())) ? s.optLong("manual", 0) : 0;
+            boolean sameDay = s.optString("day").equals(day(System.currentTimeMillis()));
+            long base = sameDay ? s.optLong("manual", 0) : 0;
             long val = Math.max(today, base), goal = Math.max(1, s.optLong("goal", 8000));
+            // Si hoy se corrigieron los pasos a mano, se sigue contando desde esa corrección
+            if (sameDay && s.has("fixV")) val = Math.max(0, s.optLong("fixV", 0) + today - s.optLong("fixBase", 0));
+            s.put("sday", day(System.currentTimeMillis()));
             NumberFormat nf = NumberFormat.getIntegerInstance();
             s.put("t", s.optString("label", "Pasos") + " " + nf.format(val) + " / " + nf.format(goal));
             s.put("p", (int) Math.min(100, val * 100 / goal));

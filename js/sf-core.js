@@ -59,14 +59,38 @@ const kcalOf = h => h.k != null ? h.k : kcalCalc(h);
 /* ---------- Resumen de un día ---------- */
 const stepKcal = n => Math.round((n || 0) * 0.00057 * kg());
 const stepMin = n => Math.round((n || 0) / 115);
+/* Pasos que se dieron DURANTE un entreno: sus calorías ya están en el entreno, así que no se cuentan otra vez.
+   Si el entreno tiene hora (timer, pesas en vivo) se miran los pasos de esas horas; si se anotó a mano,
+   se estiman con la cadencia típica de la actividad (caminar ≈100 pasos/min, correr ≈160…). */
+const CADENCE = { walk:100, walk_fast:115, jog:150, run:160, run_fast:170, hike:100, stairs:90, soccer:100, micro:100, basket:90, tennis:80, dance:90, zumba:90, volley:50, skate:0, house:40, other:60 };
+function stepsDuring(h, ds){
+  const min = minOf(h); if (!min) return 0;
+  const hh = stepH[ds];
+  if (!h.manual && h.ts && hh && iso(new Date(h.ts)) === ds){
+    const end = h.ts, start = end - min * 60000; let n = 0;
+    for (let t = start; t < end;){
+      const d = new Date(t), hEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours() + 1).getTime(), to = Math.min(end, hEnd);
+      if (iso(d) === ds) n += (hh[d.getHours()] || 0) * (to - t) / 3600000;
+      t = to;
+    }
+    return Math.round(n);
+  }
+  return Math.round(min * (CADENCE[h.a] || 0));
+}
+function daySteps(ds, acts){
+  const st = steps[ds] || 0; acts = acts || sessLog.filter(h => h.d === ds);
+  const during = Math.min(st, acts.reduce((a, h) => a + stepsDuring(h, ds), 0));
+  return { st, during, free: st - during };
+}
 function dayBurn(ds){
   const acts = sessLog.filter(h => h.d === ds);
-  const st = steps[ds] || 0;
+  const ds2 = daySteps(ds, acts), st = ds2.st;
   const train = acts.reduce((a, h) => a + kcalOf(h), 0), tmin = acts.reduce((a, h) => a + minOf(h), 0);
-  const active = train + stepKcal(st), b = bmr();
+  // los pasos de fuera de los entrenos suman calorías y minutos; los de dentro ya están contados en el entreno
+  const active = train + stepKcal(ds2.free), b = bmr();
   // Hoy el reposo va por la hora que es; los días pasados, completo
   const frac = ds === todayISO() ? (new Date().getHours() * 60 + new Date().getMinutes()) / 1440 : ds > todayISO() ? 0 : 1;
-  return { acts, steps: st, train, active, min: tmin + stepMin(st), tmin, bmr: b, rest: Math.round(b * frac), total: Math.round(b * frac) + active };
+  return { acts, steps: st, stepsFree: ds2.free, train, active, min: tmin + stepMin(ds2.free), tmin, bmr: b, rest: Math.round(b * frac), total: Math.round(b * frac) + active };
 }
 function dayStripHTML(ds){
   const b = dayBurn(ds), f = window.SFNutri ? SFNutri.dayTotals(ds) : null, w = water[ds] || 0;
@@ -195,6 +219,16 @@ const StepsP = plugin('Steps');
 let stepState = load('sf_stepc', null);  // { c: contador del sensor, boot: hora de encendido, ts: última lectura }
 let stepsOn = false;
 let stepH = load('sf_steph', {});        // pasos por hora: { fecha: [24 números] }
+// Corrección a mano: { fecha: { v: lo que puso la persona, base: lo que llevaba el conteo automático en ese momento } }
+// Así, si alguien baja sus pasos, el conteo automático sigue sumando desde ahí en vez de volverlos a subir.
+let stepFix = load('sf_stepfix', {}), stepAuto = load('sf_stepauto', {});
+function autoSet(d, v){
+  stepAuto[d] = Math.max(stepAuto[d] || 0, Math.round(v));
+  const f = stepFix[d];
+  if (f) steps[d] = Math.max(0, Math.round(f.v + stepAuto[d] - f.base));
+  else if (stepAuto[d] > (steps[d] || 0)) steps[d] = stepAuto[d];
+}
+const saveAuto = () => { const ks = Object.keys(stepAuto).sort(); ks.slice(0, Math.max(0, ks.length - 60)).forEach(k => { delete stepAuto[k]; delete stepFix[k]; }); save('sf_stepauto', stepAuto); save('sf_stepfix', stepFix); };
 function splitSteps(n, fromTs, toTs){
   // Reparte los pasos entre las horas que pasaron desde la última lectura (y así entre los días)
   if (n <= 0) return;
@@ -212,19 +246,19 @@ function splitSteps(n, fromTs, toTs){
 }
 // Pasos que llegan de Health Connect (reloj, Google Fit, Samsung Health…): reemplazan los del día
 function setStepsFromHC(byDay, byHour){
-  Object.entries(byDay).forEach(([d, v]) => { if (v > (steps[d] || 0) * 0.5 || !steps[d]) steps[d] = Math.round(v); });
+  Object.entries(byDay).forEach(([d, v]) => { if (stepFix[d]) autoSet(d, v); else if (v > (steps[d] || 0) * 0.5 || !steps[d]){ steps[d] = Math.round(v); stepAuto[d] = Math.round(v); } });
   Object.entries(byHour || {}).forEach(([d, arr]) => { stepH[d] = arr.map(Math.round); });
-  save('sf_steps', steps); save('sf_steph', stepH);
+  save('sf_steps', steps); save('sf_steph', stepH); saveAuto();
 }
 // Desde la 4.3 el teléfono guarda los pasos solo (StepStore.java) aunque la app esté cerrada; aquí solo se traen
 function mergeNative(h){
   if (!h || !h.days) return;
-  Object.entries(h.days).forEach(([d, v]) => { v = Math.round(v); if (v > (steps[d] || 0)) steps[d] = v; });
+  Object.entries(h.days).forEach(([d, v]) => autoSet(d, v));
   Object.entries(h.hours || {}).forEach(([d, arr]) => {
     const a = arr.map(x => Math.round(x)), sum = x => (x || []).reduce((p, q) => p + q, 0);
     if (sum(a) >= sum(stepH[d])) stepH[d] = a;
   });
-  save('sf_steps', steps); save('sf_steph', stepH);
+  save('sf_steps', steps); save('sf_steph', stepH); saveAuto();
 }
 async function readSteps(ask){
   if (!StepsP || !S.stepSensor) return false;
@@ -269,7 +303,7 @@ function openStepsForm(){
     makeStepper(sh.querySelector('#stG'), { get:() => G.steps, set:x => G.steps = Math.round(x), min:1000, max:40000, step:500, input:true, label:'Meta de pasos' });
     sh.querySelector('#stAuto').addEventListener('click', async e => { const b = e.currentTarget, on = !b.classList.contains('on'); b.classList.toggle('on', on); const ok = await enableSteps(on); if (on && !ok) b.classList.remove('on'); });
     sh.querySelector('#stC').addEventListener('click', closeForm);
-    sh.querySelector('#stS').addEventListener('click', () => { const i = sh.querySelector('#stN input'); if (i) i.blur(); if (v.n) steps[t] = v.n; else delete steps[t]; save('sf_steps', steps); saveG(); closeForm(); if (current === 'home') SFToday.render(); checkMedals(); });
+    sh.querySelector('#stS').addEventListener('click', () => { const i = sh.querySelector('#stN input'); if (i) i.blur(); if (v.n) steps[t] = v.n; else delete steps[t]; stepFix[t] = { v: v.n, base: stepAuto[t] || 0 }; save('sf_steps', steps); saveAuto(); saveG(); closeForm(); if (current === 'home') SFToday.render(); checkMedals(); });
   });
 }
 
@@ -393,7 +427,7 @@ function view(id, title, opt){
 // Un guía Satronho hablando (para consejos y pantallas vacías)
 const says = (id, text) => `<div class="sfsays">${SFArt.badge(id, 52)}<div class="bub"><b style="color:${SFArt.GUIDES[id].color}">${SFArt.GUIDES[id].name}</b><p>${text}</p></div></div>`;
 
-window.SF = { ACT, G, saveG, nf, n1, hm, kg, ageY, bmr, profileMissing, waterGoal, weekGoal, kcalCalc, fillKcal, kcalOf, minOf, dayBurn, dayStripHTML, stepKcal,
+window.SF = { ACT, G, saveG, daySteps, stepFix: d => stepFix[d] || null, stepAuto: d => stepAuto[d] || 0, nf, n1, hm, kg, ageY, bmr, profileMissing, waterGoal, weekGoal, kcalCalc, fillKcal, kcalOf, minOf, dayBurn, dayStripHTML, stepKcal,
   streaks, isRest, mondayOf, weekDays, totals, MEDALS, medals: () => medals, checkMedals, onTrain, water: () => water, addWater, steps: () => steps, stepHours: () => stepH, setStepsFromHC, readSteps, enableSteps, stepsPlugin: () => StepsP, stepsOn: () => stepsOn, openStepsForm,
   openGoalsForm, ring, bars, lineChart, view, says, BACK_SVG };
 window.SFAct = { openForm: openActForm };

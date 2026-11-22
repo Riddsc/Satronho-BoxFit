@@ -33,8 +33,10 @@ function cardioPts(ds){
   });
   // caminata rápida: en las horas con muchos pasos, los que pasan de 1.500 cuentan como minutos a paso vivo (≈110 por minuto)
   const hh = SF.stepHours()[ds];
-  if (hh) hh.forEach(v => { if (v >= 2500) p += Math.min(60, Math.round((v - 1500) / 110)); });
-  return Math.round(p);
+  let sp = 0; if (hh) hh.forEach(v => { if (v >= 2500) sp += Math.min(60, Math.round((v - 1500) / 110)); });
+  // los pasos que se dieron dentro de un entreno ya sumaron puntos con ese entreno
+  sp = Math.max(0, sp - Math.round(SF.daySteps(ds).during / 110));
+  return Math.round(p + sp);
 }
 const weekPts = () => { let s = 0; const mon = SF.mondayOf(todayISO()); for (let i = 0; i < 7; i++){ const d = addDays(mon, i); if (d <= todayISO()) s += cardioPts(d); } return s; };
 const stride = () => (me.height || 170) * 0.415 / 100;     // metros por paso
@@ -125,8 +127,13 @@ async function syncHC(loud){
   try {
     const to = Date.now(), from = to - 7 * 864e5;
     const [stR, hrR, rhR] = await Promise.all(HC_TYPES.map(tp => hcRead(tp, from, to).catch(() => [])));
+    // Varias apps (reloj, Google Fit, Samsung Health…) pueden guardar los MISMOS pasos: sumarlas los duplica.
+    // Por eso se suman por app y, para cada día, se usa la app que más pasos registró.
+    const per = {};   // { app: { day: { n, h:[24] } } }
+    stR.forEach(r => { const a = new Date(r.startTime), d = iso(a), app = (r.metadata && r.metadata.dataOrigin) || '?';
+      const x = ((per[app] = per[app] || {})[d] = per[app][d] || { n: 0, h: new Array(24).fill(0) }); x.n += r.count || 0; x.h[a.getHours()] += r.count || 0; });
     const byDay = {}, byHour = {};
-    stR.forEach(r => { const a = new Date(r.startTime), d = iso(a); byDay[d] = (byDay[d] || 0) + (r.count || 0); const h = byHour[d] || (byHour[d] = new Array(24).fill(0)); h[a.getHours()] += r.count || 0; });
+    Object.values(per).forEach(days => Object.entries(days).forEach(([d, x]) => { if (x.n > (byDay[d] || 0)){ byDay[d] = x.n; byHour[d] = x.h; } }));
     if (stR.length) SF.setStepsFromHC(byDay, byHour);
     // pulso: una medición por hora (la más baja), y el pulso en reposo de cada día
     const seen = new Set(hr.filter(x => x.src === 'hc').map(x => x.ts));

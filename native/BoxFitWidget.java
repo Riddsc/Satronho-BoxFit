@@ -9,6 +9,9 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.view.View;
 import android.widget.RemoteViews;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import org.json.JSONObject;
 
 /** Widget de Satronho BoxFit: racha, calorías activas, minutos, pasos y agua del día. */
@@ -23,6 +26,9 @@ public class BoxFitWidget extends AppWidgetProvider {
         } catch (Exception e) {
             d = new JSONObject();
         }
+        // Pasada la medianoche sin abrir la app, los números de ayer se muestran en cero (no como si fueran de hoy)
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
+        boolean stale = !today.equals(d.optString("day", today));
         for (int id : ids) {
             RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.sf_widget);
             boolean light = d.optBoolean("light", false);
@@ -33,10 +39,10 @@ public class BoxFitWidget extends AppWidgetProvider {
             v.setTextColor(R.id.sfw_streak, txt);
             v.setTextViewText(R.id.sfw_title, d.optString("title", "Satronho BoxFit"));
             v.setTextColor(R.id.sfw_title, dim);
-            row(v, d, "kcal", R.id.sfw_kcal_box, R.id.sfw_kcal, R.id.sfw_kcal_bar, txt);
-            row(v, d, "min", R.id.sfw_min_box, R.id.sfw_min, R.id.sfw_min_bar, txt);
-            row(v, d, "steps", R.id.sfw_steps_box, R.id.sfw_steps, R.id.sfw_steps_bar, txt);
-            row(v, d, "water", R.id.sfw_water_box, R.id.sfw_water, R.id.sfw_water_bar, txt);
+            row(v, d, "kcal", R.id.sfw_kcal_box, R.id.sfw_kcal, R.id.sfw_kcal_bar, txt, stale, today);
+            row(v, d, "min", R.id.sfw_min_box, R.id.sfw_min, R.id.sfw_min_bar, txt, stale, today);
+            row(v, d, "steps", R.id.sfw_steps_box, R.id.sfw_steps, R.id.sfw_steps_bar, txt, stale, today);
+            row(v, d, "water", R.id.sfw_water_box, R.id.sfw_water, R.id.sfw_water_bar, txt, stale, today);
             v.setViewVisibility(R.id.sfw_streak, d.optBoolean("showStreak", true) ? View.VISIBLE : View.GONE);
             Intent open = new Intent(ctx, MainActivity.class);
             open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -46,12 +52,14 @@ public class BoxFitWidget extends AppWidgetProvider {
         }
     }
 
-    private static void row(RemoteViews v, JSONObject d, String k, int box, int label, int bar, int txt) {
+    private static void row(RemoteViews v, JSONObject d, String k, int box, int label, int bar, int txt, boolean stale, String today) {
         JSONObject r = d.optJSONObject(k);
         if (r == null || !r.optBoolean("on", true)) { v.setViewVisibility(box, View.GONE); return; }
         v.setViewVisibility(box, View.VISIBLE);
-        v.setTextViewText(label, r.optString("t", ""));
+        // Los pasos los pone al día StepStore aunque la app esté cerrada (sday = día de ese dato)
+        boolean old = stale && !(k.equals("steps") && today.equals(r.optString("sday", "")));
+        v.setTextViewText(label, old ? r.optString("t0", r.optString("t", "")) : r.optString("t", ""));
         v.setTextColor(label, txt);
-        v.setProgressBar(bar, 100, Math.max(0, Math.min(100, r.optInt("p", 0))), false);
+        v.setProgressBar(bar, 100, old ? 0 : Math.max(0, Math.min(100, r.optInt("p", 0))), false);
     }
 }

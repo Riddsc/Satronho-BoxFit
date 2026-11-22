@@ -4,3 +4,4 @@ node_modules/
 *.keystore
 node_modules/
 www/
+fonts/

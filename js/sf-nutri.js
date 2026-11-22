@@ -32,16 +32,21 @@ const mk = (f, g, m) => ({ id: uid(), m, n: f[0], g: Math.round(g), k: Math.roun
 const sum = list => list.reduce((a, x) => { a.k += x.k || 0; a.p += x.p || 0; a.c += x.c || 0; a.f += x.f || 0; return a; }, { k: 0, p: 0, c: 0, f: 0 });
 function dayTotals(ds){ const t = sum(log[ds] || []); t.n = (log[ds] || []).length; return t; }
 
+/* ---------- Menores de 18: sin déficit, sin superávit, sin keto/baja en harinas y sin ayuno ---------- */
+// El cuerpo está creciendo y las fórmulas de calorías son de adultos: eso se maneja con un médico o nutricionista.
+const minor = () => { const a = ageOf(me); return !!a && a.y < 18; };
+const MINOR_NOTE = 'Eres menor de 18 años: la app no arma planes para bajar o subir de peso, ni dietas keto o bajas en harinas, ni ayunos. Tu cuerpo está creciendo; si quieres cambiar tu peso, hazlo con un médico o nutricionista. Aquí ves cuánto comes y si te hidratas bien.';
 /* ---------- Metas ---------- */
 function targets(){
   if (nut.manual) return { k: nut.kcal, p: nut.p, c: nut.c, f: nut.f, maint: Math.round(SF.bmr() * nut.life), manual: true };
-  const w = SF.kg(), maint = SF.bmr() * nut.life, floor = me.sex === 'F' ? 1200 : 1500;
-  let k = maint + (nut.goal === 'lose' ? -nut.rate * 1100 : nut.goal === 'gain' ? nut.rate * 1100 : 0);
+  const w = SF.kg(), maint = SF.bmr() * nut.life, floor = me.sex === 'F' ? 1200 : 1500, mn = minor();
+  const goal = mn ? 'keep' : nut.goal, diet = mn && (nut.diet === 'keto' || nut.diet === 'lc') ? 'eq' : nut.diet;
+  let k = maint + (goal === 'lose' ? -nut.rate * 1100 : goal === 'gain' ? nut.rate * 1100 : 0);
   const capped = k < floor; k = Math.max(floor, k);
-  const pkg = nut.diet === 'hp' ? (nut.goal === 'lose' ? 2.2 : 2.0) : nut.diet === 'lc' ? 1.8 : nut.diet === 'keto' ? 1.6 : (nut.goal === 'keep' ? 1.4 : 1.6);
-  const fpct = nut.diet === 'keto' ? 0.70 : nut.diet === 'lc' ? 0.40 : nut.diet === 'hp' ? 0.25 : 0.28;
+  const pkg = diet === 'hp' ? (goal === 'lose' ? 2.2 : 2.0) : diet === 'lc' ? 1.8 : diet === 'keto' ? 1.6 : (goal === 'keep' ? 1.4 : 1.6);
+  const fpct = diet === 'keto' ? 0.70 : diet === 'lc' ? 0.40 : diet === 'hp' ? 0.25 : 0.28;
   const p = Math.round(Math.min(pkg * w, k * 0.4 / 4)), f = Math.round(k * fpct / 9), c = Math.max(0, Math.round((k - p * 4 - f * 9) / 4));
-  return { k: Math.round(k / 10) * 10, p, c, f, maint: Math.round(maint), capped };
+  return { k: Math.round(k / 10) * 10, p, c, f, maint: Math.round(maint), capped, minor: mn };
 }
 function dayGoal(ds){ const t = targets(), ex = nut.addEx ? SF.dayBurn(ds).active : 0; return { base: t.k, ex, k: t.k + ex, t }; }
 
@@ -72,7 +77,7 @@ function renderDiary(){
     </div>
     <div class="sect sfbal"><h4>ENERGÍA DEL DÍA</h4>
       <div class="eq"><div><b>${nf(tot.k)}</b><small>🍽️ Comido</small></div><i>−</i><div><b>${nf(spent)}</b><small>⚡ Gastado</small></div><i>=</i><div class="${bal > 0 ? 'pos' : 'neg'}"><b>${bal > 0 ? '+' : '−'}${nf(Math.abs(bal))}</b><small>Balance</small></div></div>
-      <div class="split"><span><i style="background:#71717a"></i>En reposo ${nf(b.rest)}</span><span><i style="background:#d98a78"></i>Entrenos ${nf(b.train)}</span><span><i style="background:#7aa9d1"></i>Pasos ${nf(SF.stepKcal(b.steps))}</span></div></div>
+      <div class="split"><span><i style="background:#71717a"></i>En reposo ${nf(b.rest)}</span><span><i style="background:#d98a78"></i>Entrenos ${nf(b.train)}</span><span><i style="background:#7aa9d1"></i>Pasos ${nf(SF.stepKcal(b.stepsFree))}</span></div></div>
     ${MEALS.map(([k, name, ic]) => { const li = items.filter(x => x.m === k), s = sum(li);
       return `<div class="sect sfmeal"><div class="mh"><span class="ic">${ic}</span><span class="l"><b>${name.toUpperCase()}</b><small>${li.length ? nf(s.k) + ' kcal · P ' + nf(s.p) + ' · C ' + nf(s.c) + ' · G ' + nf(s.f) : 'Nada todavía'}</small></span>
         ${li.length ? `<button class="xbtn" data-mm="${k}" aria-label="Opciones">⋯</button>` : ''}<button class="smallbtn go" data-add="${k}">+ AGREGAR</button></div>
@@ -96,7 +101,8 @@ function renderPlan(){
   body.innerHTML = `
     <div class="sect"><h4>MI META DE CADA DÍA</h4>
       <div class="sfmacs"><div style="--c:${K_COL}"><b>${nf(t.k)}</b><small>kcal</small></div><div style="--c:${P_COL}"><b>${nf(t.p)}</b><small>g proteína</small></div><div style="--c:${C_COL}"><b>${nf(t.c)}</b><small>g carbos</small></div><div style="--c:${F_COL}"><b>${nf(t.f)}</b><small>g grasa</small></div></div>
-      <p class="hint">${nut.manual ? 'Metas puestas a mano.' : ({ lose: 'Bajar ' + n1(nut.rate) + ' kg por semana', gain: 'Subir ' + n1(nut.rate) + ' kg por semana', keep: 'Mantener mi peso' })[nut.goal] + ' · ' + DIETS[nut.diet][0]}. En un día normal gastas ≈${nf(t.maint)} kcal.${nut.addEx ? ' Lo que quemas entrenando se suma a tu meta.' : ''}</p>
+      ${t.minor && !nut.manual ? `<p class="warn">${MINOR_NOTE}</p>` : ''}
+      <p class="hint">${nut.manual ? 'Metas puestas a mano' : t.minor ? 'Mantener mi peso · ' + DIETS[(nut.diet === 'keto' || nut.diet === 'lc') ? 'eq' : nut.diet][0] : ({ lose: 'Bajar ' + n1(nut.rate) + ' kg por semana', gain: 'Subir ' + n1(nut.rate) + ' kg por semana', keep: 'Mantener mi peso' })[nut.goal] + ' · ' + DIETS[nut.diet][0]}. En un día normal gastas ≈${nf(t.maint)} kcal.${nut.addEx ? ' Lo que quemas entrenando se suma a tu meta.' : ''}</p>
       <button class="btn pri" id="npPlan" style="width:100%;flex:none;margin-bottom:12px;--bc:${K_COL}">🎯 CAMBIAR MI PLAN</button></div>
     ${gm}
     <div class="tiles">
@@ -133,8 +139,8 @@ function renderWater(){
       <p class="hint">${w >= wg ? '¡Meta de agua cumplida! 💧' : 'Faltan ' + nf(wg - w) + ' ml. '}${SF.G.water ? '' : 'Tu meta sale de tu peso (35 ml por kilo); en días de entreno toma un poco más.'}</p></div>
     <div class="sect"><h4>AGUA · ${SFPeriod.title(wk).toUpperCase()} (ml)</h4>${SFPeriod.seg('water', 'w', ['w', 'm', 'q', 'y'])}${SF.bars(days, '#7aa9d1', wg, '')}</div>
     <div class="sect"><h4>AYUNO</h4>
-      ${fi ? `<div class="sffast">${SF.ring(fi.el / fi.hours, '#9d8fd0', 150, 14, `<b>${Math.floor(fi.el)}:${pad2(Math.floor(fi.el % 1 * 60))}</b><small>de ${fi.hours} h</small>`)}</div>` : '<p class="hint">Ventana sin comer. La más usada es 16 horas de ayuno y 8 para comer. Es opcional.</p>'}
-      <button class="btn ${fi ? '' : 'pri'}" id="nwFast" style="width:100%;flex:none;margin-bottom:12px;--bc:#9d8fd0">${fi ? 'VER O TERMINAR EL AYUNO' : '⏳ EMPEZAR UN AYUNO'}</button></div>`;
+      ${fi ? `<div class="sffast">${SF.ring(fi.el / fi.hours, '#9d8fd0', 150, 14, `<b>${Math.floor(fi.el)}:${pad2(Math.floor(fi.el % 1 * 60))}</b><small>de ${fi.hours} h</small>`)}</div>` : (minor() ? '<p class="hint">El ayuno no está disponible para menores de 18 años.</p>' : '<p class="hint">Ventana sin comer. La más usada es 16 horas de ayuno y 8 para comer. Es opcional.</p>')}
+      <button class="btn ${fi ? '' : 'pri'}" id="nwFast" ${!fi && minor() ? 'hidden' : ''} style="width:100%;flex:none;margin-bottom:12px;--bc:#9d8fd0">${fi ? 'VER O TERMINAR EL AYUNO' : '⏳ EMPEZAR UN AYUNO'}</button></div>`;
   body.querySelectorAll('[data-w]').forEach(b => b.addEventListener('click', () => { SF.addWater(+b.dataset.w, t); keepY(render); }));
   SFPeriod.bind(body, 'water', () => keepY(render));
   body.querySelector('#nwFast').addEventListener('click', openFast);
@@ -286,7 +292,9 @@ function openPlan(){
       sh.querySelectorAll('#plL [data-l]').forEach(b => b.classList.toggle('on', +b.dataset.l === N.life));
       sh.querySelectorAll('#plD [data-d]').forEach(b => b.classList.toggle('on', b.dataset.d === N.diet));
       sh.querySelector('#plDd').textContent = DIETS[N.diet][1] + (N.diet === 'keto' ? '. Es exigente: mejor con acompañamiento profesional.' : '');
-      sh.querySelector('#plRw').style.display = N.goal === 'keep' || N.manual ? 'none' : '';
+      const mn = minor();
+      if (mn){ sh.querySelectorAll('#plG [data-g="lose"], #plG [data-g="gain"], #plD [data-d="keto"], #plD [data-d="lc"]').forEach(x => { x.disabled = true; x.style.opacity = '.35'; }); }
+      sh.querySelector('#plRw').style.display = N.goal === 'keep' || N.manual || mn ? 'none' : '';
       sh.querySelector('#plEx').classList.toggle('on', !!N.addEx); sh.querySelector('#plMan').classList.toggle('on', !!N.manual);
       const keep = nut; nut = N; const t = targets(); nut = keep;
       const miss = SF.profileMissing(), lw = lastWeight();
@@ -294,6 +302,7 @@ function openPlan(){
       if (!N.manual && N.goal !== 'keep' && wGoal && lw && ((N.goal === 'lose' && wGoal < lw.kg) || (N.goal === 'gain' && wGoal > lw.kg))){ const wk = Math.abs(lw.kg - wGoal) / N.rate; eta = `<p>A este ritmo llegas a tu meta de <b>${fmtKg(wGoal)} kg</b> en unas <b>${Math.ceil(wk)} semanas</b>.</p>`; }
       sh.querySelector('#plRes').innerHTML = `<div class="sfmacs"><div style="--c:${K_COL}"><b>${nf(t.k)}</b><small>kcal al día</small></div><div style="--c:${P_COL}"><b>${nf(t.p)}</b><small>g proteína</small></div><div style="--c:${C_COL}"><b>${nf(t.c)}</b><small>g carbos</small></div><div style="--c:${F_COL}"><b>${nf(t.f)}</b><small>g grasa</small></div></div>
         <p>Tu cuerpo gasta unas <b>${nf(t.maint)} kcal</b> en un día normal sin entrenar.</p>${eta}
+        ${t.minor && !N.manual ? `<p class="warn">${MINOR_NOTE}</p>` : ''}
         ${t.capped ? '<p class="warn">⚠️ Ese ritmo te dejaría por debajo del mínimo seguro; ajusté las calorías al mínimo. Baja más despacio o habla con un profesional.</p>' : ''}
         ${N.goal === 'lose' && N.rate >= 1 ? '<p class="warn">⚠️ Bajar 1 kg por semana es muy rápido: se pierde músculo y fuerza. Para dar el peso de una pelea, hazlo con tu entrenador.</p>' : ''}
         ${miss.length ? `<p class="warn">Falta en tu perfil: ${miss.join(', ')}. Por ahora uso valores promedio.</p>` : ''}`;
@@ -348,6 +357,7 @@ function openMenus(){
 
 /* ---------- Ayuno ---------- */
 function openFast(){
+  if (minor() && !fast){ openForm(`<h3 class="ftitle">⏳ AYUNO</h3><p class="warn">Los ayunos no son para menores de 18 años: tu cuerpo necesita energía constante para crecer y entrenar. Mejor come a tus horas y, si tienes dudas, habla con un médico o nutricionista.</p><button class="btn pri" id="fsM" style="width:100%">ENTENDIDO</button>`, sh => sh.querySelector('#fsM').addEventListener('click', closeForm)); return; }
   const hrs = fast ? fast.hours : (S.fastHours || 16);
   const st = { h: hrs };
   const body = () => { if (!fast) return `<p class="hint">Ventana sin comer. La más usada es 16 horas de ayuno y 8 para comer. El agua, el tinto y el té sin azúcar no lo rompen.</p><div class="field"><span>Horas de ayuno</span><div class="seg" id="fsH">${[12, 14, 16, 18, 20].map(h => `<button type="button" data-h="${h}" class="${h === st.h ? 'on' : ''}">${h} H</button>`).join('')}</div></div>`;

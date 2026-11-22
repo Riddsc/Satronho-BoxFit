@@ -19,6 +19,9 @@ refresh();
 if (SF.stepsPlugin() && !S.stepAsked && !S.stepSensor) setTimeout(async () => { if (await SF.enableSteps(true)) refresh(); }, 1800);
 document.addEventListener('visibilitychange', () => { if (!document.hidden){ refresh(); if (current === 'home') SFToday.render(); } });
 SF.checkMedals(true);
+// Espacio usado: el teléfono da unos 5 millones de caracteres a la app; se avisa al pasar del 80 %
+try { let n = 0; for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); n += k.length + (localStorage.getItem(k) || '').length; }
+  if (n > 4e6) setTimeout(() => toast('⚠️ La app ya usa casi todo su espacio. Haz una copia de seguridad en Ajustes › Datos'), 2500); } catch(e){}
 if (window.SFRemind) SFRemind.sync();
 bootApp();
 // Novedades de la versión 4 (una sola vez)

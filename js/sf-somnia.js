@@ -30,9 +30,11 @@ function pack(){
 function importPack(p){
   if (!p || p.app !== 'satronho-somnia' || p.kind !== 'sueno' || !Array.isArray(p.nights)) return false;
   sl = sl && sl.nights ? sl : { nights: {} };
-  p.nights.forEach(n => { if (n && n.w && n.a > 0) sl.nights[n.w] = { a: Math.round(n.a), ef: n.ef || null, dp: n.dp || 0, rm: n.rm || 0, sc: n.sc == null ? null : Math.round(n.sc), sn: n.sn == null ? null : n.sn, s: n.s || 0, e: n.e || 0 }; });
+  // Solo números y fechas válidas: lo que llega de otra app nunca se pinta tal cual
+  const num = (v, mx) => { v = Number(v); return isFinite(v) ? clamp(v, 0, mx) : 0; };
+  p.nights.forEach(n => { if (n && /^\d{4}-\d{2}-\d{2}$/.test(n.w) && num(n.a, 1440) > 0) sl.nights[n.w] = { a: Math.round(num(n.a, 1440)), ef: n.ef == null ? null : num(n.ef, 100), dp: num(n.dp, 1440), rm: num(n.rm, 1440), sc: n.sc == null ? null : Math.round(num(n.sc, 100)), sn: n.sn == null ? null : num(n.sn, 100), s: num(n.s, 9e15), e: num(n.e, 9e15) }; });
   const keys = Object.keys(sl.nights).sort(); keys.slice(0, Math.max(0, keys.length - 200)).forEach(k => delete sl.nights[k]);
-  sl.at = Date.now(); sl.need = p.need || sl.need || 8; sl.name = p.name || '';
+  sl.at = Date.now(); sl.need = clamp(Number(p.need) || sl.need || 8, 4, 14); sl.name = String(p.name || '').slice(0, 40);
   save('sf_sleep', sl); SF.checkMedals();
   return p.nights.length;
 }
@@ -114,10 +116,14 @@ function done(n){
   if (current === 'home') SFToday.render(); else if (current === 'settings') renderSettings(); else if (current === 'progress') SFProgress.render();
 }
 // Respuesta de Somnia por enlace: satronhoboxfit://cruce?d=<datos>
-function onUrl(url){
+async function onUrl(url){
   if (!url || url.indexOf('satronhoboxfit://') !== 0) return;
   const m = /[?&]d=([^&]+)/.exec(url); if (!m) return;
   let p; try { p = JSON.parse(b64d(m[1])); } catch(e){ return toast('No se pudo leer lo que envió Somnia'); }
+  if (!p || p.app !== 'satronho-somnia' || p.kind !== 'sueno' || !Array.isArray(p.nights)) return toast('Somnia envió algo que no reconozco');
+  // Cualquier página o app puede abrir este enlace: si no fue BoxFit el que pidió el cruce hace poco, se pregunta primero
+  const asked = waiting && Date.now() - waiting < 10 * 60000;
+  if (!asked && !(await confirmDlg('¿Traer este sueño?', TF('Llegaron {s} noches de sueño por un enlace. Solo acepta si las enviaste tú desde Satronho Somnia.', p.nights.length), 'TRAER'))) return;
   const n = importPack(p); if (n === false) return toast('Somnia envió algo que no reconozco');
   done(n);
 }
