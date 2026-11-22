@@ -59,7 +59,7 @@ function render(){
 function setupItems(miss){
   return [
     ['me', '👤', 'Completa tu perfil', 'Con tu peso, altura, edad y género las calorías salen exactas', !miss.length],
-    ['steps', '👟', 'Activa los pasos automáticos', 'El teléfono los cuenta solo, aunque la app esté cerrada', !!S.stepSensor],
+    ...(WEB ? [] : [['steps', '👟', 'Activa los pasos automáticos', 'El teléfono los cuenta solo, aunque la app esté cerrada', !!S.stepSensor]]),
     ['goals', '🎯', 'Pon tus metas del día', 'Calorías activas, minutos y pasos a tu medida', load('sf_goals', null) != null],
     ['sleep', '🌙', 'Arma tu horario de sueño', 'Cuánto quieres dormir y a qué hora te levantas', !!(SFHealth.sleepPlan() || {}).wake],
   ];

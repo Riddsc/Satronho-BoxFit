@@ -64,11 +64,11 @@ function renderSteps(body){
         <p>La OMS recomienda <b>150 minutos</b> de actividad moderada a la semana. Ganas <b>1 punto</b> por minuto moderado (caminar rápido, pesas) y <b>2</b> por minuto intenso (boxeo, correr).${wp >= 150 ? ' <b>¡Meta semanal cumplida!</b>' : ''}</p></div>
       ${SF.bars(ptsWeek, '#6fa8c4', 0, '')}</div>
     ${hcCardHTML()}
-    <div class="sect"><h4>PASOS AUTOMÁTICOS</h4><div class="row" style="border:0"><span class="pic" style="--c:var(--mode)">👟</span><div class="l"><b>Contar pasos con el teléfono</b><small>${S.stepSensor ? 'Se cuentan solos, aunque la app esté cerrada, con el sensor del celular (casi no gasta batería).' : 'Apagado: actívalo y el teléfono los cuenta solo, como Google.'}</small></div><button class="switch ${S.stepSensor ? 'on' : ''}" id="hsSensor"></button></div>
-      ${S.stepSensor ? '<div id="hsBatt"></div>' : ''}</div>`;
+    ${WEB ? `<div class="sect"><h4>PASOS AUTOMÁTICOS</h4>${webNote('En la versión web los pasos se anotan a mano con <b>✏️ PASOS</b>. El conteo automático con el sensor del teléfono es de la app de Android.')}` : `<div class="sect"><h4>PASOS AUTOMÁTICOS</h4><div class="row" style="border:0"><span class="pic" style="--c:var(--mode)">👟</span><div class="l"><b>Contar pasos con el teléfono</b><small>${S.stepSensor ? 'Se cuentan solos, aunque la app esté cerrada, con el sensor del celular (casi no gasta batería).' : 'Apagado: actívalo y el teléfono los cuenta solo, como Google.'}</small></div><button class="switch ${S.stepSensor ? 'on' : ''}" id="hsSensor"></button></div>
+      ${S.stepSensor ? '<div id="hsBatt"></div>' : ''}`}</div>`;
   body.querySelector('#hsEdit').addEventListener('click', () => SF.openStepsForm());
   body.querySelector('#hsGoals').addEventListener('click', () => SF.openGoalsForm());
-  body.querySelector('#hsSensor').addEventListener('click', async e => { const bt = e.currentTarget, on = !bt.classList.contains('on'); bt.classList.toggle('on', on); const ok = await SF.enableSteps(on); if (on && !ok) bt.classList.remove('on'); else render(); });
+  if (body.querySelector('#hsSensor')) body.querySelector('#hsSensor').addEventListener('click', async e => { const bt = e.currentTarget, on = !bt.classList.contains('on'); bt.classList.toggle('on', on); const ok = await SF.enableSteps(on); if (on && !ok) bt.classList.remove('on'); else render(); });
   bindHC(body);
   SFPeriod.bind(body, 'steps', () => render());
   battCheck(body);
@@ -95,6 +95,7 @@ async function battCheck(body){
 /* ---------- Health Connect (reloj, Google Fit, Samsung Health…) ---------- */
 const HC_TYPES = ['Steps', 'HeartRateSeries', 'RestingHeartRate'];
 function hcCardHTML(){
+  if (WEB) return `<div class="sect"><h4>RELOJ Y OTRAS APPS · HEALTH CONNECT</h4>${webNote('Health Connect es de Android: en la app instalada BoxFit lee de ahí tus pasos y tu pulso. En la versión web puedes medir el pulso con la cámara, contarlo o anotarlo a mano.')}</div>`;
   return `<div class="sect"><h4>RELOJ Y OTRAS APPS · HEALTH CONNECT</h4>
     <div class="row" style="border:0"><span class="pic" style="--c:#6fa8c4">⌚</span><div class="l"><b>${hcState.on ? 'Conectado' : 'Sin conectar'}</b><small>${hcState.on ? 'Último dato: ' + (hcState.at ? niceDate(iso(new Date(hcState.at))).toLowerCase() : 'todavía nada') : 'Si usas reloj o pulsera (o Google Fit, Samsung Health), BoxFit lee de ahí tus pasos y tu pulso. Solo lee: nunca escribe.'}</small></div>
       <button class="smallbtn ${hcState.on ? '' : 'go'}" id="hcBtn">${hcState.on ? 'ACTUALIZAR' : 'CONECTAR'}</button></div>
@@ -172,7 +173,7 @@ function renderHeart(body){
       <p class="hint" style="text-align:center">${last ? (last.ctx === 'rest' ? hrClass(last.bpm)[0] + ' · ' : '') + niceDate(iso(new Date(last.ts))).toLowerCase() + ' ' + pad2(new Date(last.ts).getHours()) + ':' + pad2(new Date(last.ts).getMinutes()) + ' · ' + ({ cam: 'con la cámara', hc: 'del reloj', man: 'anotado a mano' })[last.src] : 'Todavía no hay mediciones'}</p>
       ${last && last.src !== 'hc' ? `<button class="linkbtn" id="hmEdit" style="display:block;margin:-4px auto 8px">✏️ Cambiar o repetir esta medición</button>` : ''}
       <button class="btn pri" id="hmCam" style="width:100%;flex:none;--bc:#d98585;margin-bottom:8px">📷 MEDIR CON LA CÁMARA</button>
-      <div class="btnrow three"><button class="btn" id="hmCnt">⏱️ CONTAR</button><button class="btn" id="hmMan">✏️ ANOTAR</button><button class="btn" id="hmHC">⌚ RELOJ</button></div>
+      <div class="btnrow ${WEB ? '' : 'three'}"><button class="btn" id="hmCnt">⏱️ CONTAR</button><button class="btn" id="hmMan">✏️ ANOTAR</button>${WEB ? '' : '<button class="btn" id="hmHC">⌚ RELOJ</button>'}</div>
     </div>
     <div class="kpis"><div class="kpi" style="--kc:#7fb38a"><b>${rs || '—'}</b><span>Pulso en reposo</span></div><div class="kpi" style="--kc:#d98585"><b>${mx}</b><span>Pulso máximo estimado</span></div></div>
     <div class="sect"><h4>${per === 'd' ? 'PULSO · HOY' : 'PULSO EN REPOSO · ' + SFPeriod.title(per).toUpperCase()}</h4>${SFPeriod.seg('heart', 'm')}
@@ -188,7 +189,7 @@ function renderHeart(body){
   body.querySelectorAll('[data-he]').forEach(b => b.addEventListener('click', () => { hapticTap(); openEditHR(b.dataset.he); }));
   body.querySelector('#hmMan').addEventListener('click', openManual);
   body.querySelector('#hmCnt').addEventListener('click', () => openCount());
-  body.querySelector('#hmHC').addEventListener('click', async () => { if (!hcState.on){ if (await connectHC()) await syncHC(true); } else await syncHC(true); render(); });
+  if (body.querySelector('#hmHC')) body.querySelector('#hmHC').addEventListener('click', async () => { if (!hcState.on){ if (await connectHC()) await syncHC(true); } else await syncHC(true); render(); });
 }
 const hrWhen = x => `<span data-notr>${niceDate(iso(new Date(x.ts)))} ${pad2(new Date(x.ts).getHours())}:${pad2(new Date(x.ts).getMinutes())}</span> · ${({ rest: 'En reposo', post: 'Después de entrenar', other: 'Otro momento' })[x.ctx] || ''}`;
 // Cambiar, repetir o borrar una medición ya guardada

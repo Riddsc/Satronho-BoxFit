@@ -1,7 +1,5 @@
-fonts/
 node_modules/
 *.jks
 *.keystore
 node_modules/
 www/
-fonts/

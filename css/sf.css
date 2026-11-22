@@ -613,3 +613,7 @@ body.ppgwhite #formModal .sheet{--text:#17161c;--muted:#55525c;--dim:#77737f;--p
 #home .sfhub:not(.wide):not(.slim){min-height:146px}
 #home .sfhub:not(.wide):not(.slim) b{font-size:min(28px,7.4vw);position:relative;z-index:1}
 #home .sfhub:not(.wide):not(.slim) .ic{font-size:min(40px,10.5vw)}
+/* 4.5: avisos de la versión web */
+.sfwebnote{display:flex;gap:10px;align-items:flex-start;background:var(--hl1);border:1px dashed var(--line);border-radius:14px;padding:10px 12px;margin:6px 0 12px}
+.sfwebnote span{font-size:20px;line-height:1.2}
+.sfwebnote small{color:var(--muted);font-size:14px;line-height:1.35}

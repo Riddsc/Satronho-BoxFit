@@ -294,14 +294,14 @@ async function enableSteps(on){
 function openStepsForm(){
   const t = todayISO(), v = { n: steps[t] || 0 };
   openForm(`<h3 class="ftitle">👟 PASOS DE HOY</h3>
-    <p class="hint">${S.stepSensor ? 'El teléfono los cuenta solo cada vez que abres la app. Aquí puedes corregirlos.' : 'Escribe los pasos que marca tu reloj o tu teléfono, o activa el contador automático.'}</p>
+    <p class="hint">${WEB ? 'Escribe los pasos que marca tu reloj o la app de salud de tu teléfono.' : S.stepSensor ? 'El teléfono los cuenta solo cada vez que abres la app. Aquí puedes corregirlos.' : 'Escribe los pasos que marca tu reloj o tu teléfono, o activa el contador automático.'}</p>
     <div class="field"><span>Pasos</span><div class="stepper big" id="stN"></div></div>
-    <div class="row" style="border:0"><div class="l"><b>Contar con el teléfono</b><small>Usa el sensor de pasos del celular (pide permiso de actividad física)</small></div><button class="switch ${S.stepSensor ? 'on' : ''}" id="stAuto"></button></div>
+    ${WEB ? '' : `    <div class="row" style="border:0"><div class="l"><b>Contar con el teléfono</b><small>Usa el sensor de pasos del celular (pide permiso de actividad física)</small></div><button class="switch ${S.stepSensor ? 'on' : ''}" id="stAuto"></button></div>`}
     <div class="field"><span>Meta diaria</span><div class="stepper" id="stG"></div></div>
     <div class="btnrow"><button class="btn" id="stC">CANCELAR</button><button class="btn pri" id="stS" style="--bc:#7aa9d1">GUARDAR</button></div>`, sh => {
     makeStepper(sh.querySelector('#stN'), { get:() => v.n, set:x => v.n = Math.round(x), min:0, max:99999, step:500, input:true, label:'Pasos' });
     makeStepper(sh.querySelector('#stG'), { get:() => G.steps, set:x => G.steps = Math.round(x), min:1000, max:40000, step:500, input:true, label:'Meta de pasos' });
-    sh.querySelector('#stAuto').addEventListener('click', async e => { const b = e.currentTarget, on = !b.classList.contains('on'); b.classList.toggle('on', on); const ok = await enableSteps(on); if (on && !ok) b.classList.remove('on'); });
+    if (sh.querySelector('#stAuto')) sh.querySelector('#stAuto').addEventListener('click', async e => { const b = e.currentTarget, on = !b.classList.contains('on'); b.classList.toggle('on', on); const ok = await enableSteps(on); if (on && !ok) b.classList.remove('on'); });
     sh.querySelector('#stC').addEventListener('click', closeForm);
     sh.querySelector('#stS').addEventListener('click', () => { const i = sh.querySelector('#stN input'); if (i) i.blur(); if (v.n) steps[t] = v.n; else delete steps[t]; stepFix[t] = { v: v.n, base: stepAuto[t] || 0 }; save('sf_steps', steps); saveAuto(); saveG(); closeForm(); if (current === 'home') SFToday.render(); checkMedals(); });
   });

@@ -21,6 +21,9 @@ const Cap = window.Capacitor;
 const isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
 const plugin = n => { try { return (isNative && Cap.registerPlugin) ? Cap.registerPlugin(n) : null; } catch(e){ return null; } };
 const AppP = plugin('App'), Haptics = plugin('Haptics'), Awake = plugin('KeepAwake');
+// Versión web (GitHub Pages, iPhone, computador): sin sensor de pasos, Health Connect, widget ni notificaciones
+const WEB = !isNative;
+const webNote = t => `<div class="sfwebnote"><span>🌐</span><small>${t}</small></div>`;
 
 /* =========================================================
    1. DATOS: ENTRENAMIENTOS Y AJUSTES

@@ -6,12 +6,19 @@
 <title>Satronho BoxFit</title>
 <meta name="application-name" content="Satronho BoxFit">
 <meta name="theme-color" content="#09090c">
+<!-- Versión web instalable (iPhone y Android): pantalla completa y su ícono -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon/icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BoxFit">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2318181b'/><text x='50' y='72' font-size='65' text-anchor='middle'>🥊</text></svg>">
 <script>window.SF_LG=(function(){try{var l=(JSON.parse(localStorage.getItem('bfp2_settings')||'{}').lang)||'auto';if(l==='auto'){var n=(navigator.language||'es').toLowerCase();l=n.indexOf('fr')===0?'fr':n.indexOf('en')===0?'en':'es';}return l;}catch(e){return 'es';}})();window.LOCALE={es:'es-CO',en:'en-US',fr:'fr-FR'}[SF_LG]||'es-CO';document.documentElement.lang=SF_LG;window.TT=function(s){return window.SFI18n?SFI18n.t(s):s};window.TF=function(k){var a=[].slice.call(arguments,1);return window.SFI18n?SFI18n.f.apply(null,arguments):k.replace(/\{s\}/g,function(){return a.shift()})};</script>
-<script src="js/sf-art.js?v=434"></script>
+<script src="js/sf-art.js?v=50"></script>
 <script>try{var st=JSON.parse(localStorage.getItem('bfp2_settings')||'{}'),t=st.theme||'dark';if(t==='auto')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;document.documentElement.dataset.mode=st.disc==='gym'?'gym':'box';if(st.zoom&&st.zoom!==1)document.documentElement.style.zoom=st.zoom;}catch(e){}</script>
-<link rel="stylesheet" href="css/sf-main.css?v=434">
-<link rel="stylesheet" href="css/sf.css?v=434">
+<link rel="stylesheet" href="css/sf-main.css?v=50">
+<link rel="stylesheet" href="css/sf.css?v=50">
 </head>
 <body>
 <div class="bgfx"></div>
@@ -153,7 +160,7 @@
     <div class="row"><div class="l"><b>Estadísticas</b><small id="statsLine">—</small></div><button class="smallbtn danger" id="resetStats">BORRAR</button></div>
     <div class="row"><div class="l"><b>Entrenamientos originales</b><small>Recupera los perfiles de fábrica</small></div><button class="smallbtn danger" id="resetProfiles">RESTAURAR</button></div>
   </div>
-  <p class="foot" id="sfFoot">Satronho BoxFit · versión 4.3.4</p>
+  <p class="foot" id="sfFoot">Satronho BoxFit · versión 4.5.0</p>
 </section>
 
 <!-- ================= EDITOR ================= -->
@@ -259,25 +266,25 @@
 <div id="guideBubble"></div>
 <input type="file" id="bkFile" accept=".json,application/json" hidden>
 
-<script src="js/sf-main.js?v=434"></script>
-<script src="js/sf-data.js?v=434"></script>
-<script src="js/sf-tecnica.js?v=434"></script>
-<script src="js/sf-core.js?v=434"></script>
-<script src="js/sf-period.js?v=434"></script>
-<script src="js/sf-train.js?v=434"></script>
-<script src="js/sf-gym.js?v=434"></script>
-<script src="js/sf-nutri.js?v=434"></script>
-<script src="js/sf-nav.js?v=434"></script>
-<script src="js/sf-pets.js?v=434"></script>
-<script src="js/sf-plan.js?v=434"></script>
-<script src="js/sf-health.js?v=434"></script>
-<script src="js/sf-today.js?v=434"></script>
-<script src="js/sf-progress.js?v=434"></script>
-<script src="js/sf-somnia.js?v=434"></script>
-<script src="js/sf-report.js?v=434"></script>
-<script src="js/sf-widget.js?v=434"></script>
-<script src="js/sf-lang.js?v=434"></script>
-<script src="js/sf-i18n.js?v=434"></script>
-<script src="js/sf-boot.js?v=434"></script>
+<script src="js/sf-main.js?v=50"></script>
+<script src="js/sf-data.js?v=50"></script>
+<script src="js/sf-tecnica.js?v=50"></script>
+<script src="js/sf-core.js?v=50"></script>
+<script src="js/sf-period.js?v=50"></script>
+<script src="js/sf-train.js?v=50"></script>
+<script src="js/sf-gym.js?v=50"></script>
+<script src="js/sf-nutri.js?v=50"></script>
+<script src="js/sf-nav.js?v=50"></script>
+<script src="js/sf-pets.js?v=50"></script>
+<script src="js/sf-plan.js?v=50"></script>
+<script src="js/sf-health.js?v=50"></script>
+<script src="js/sf-today.js?v=50"></script>
+<script src="js/sf-progress.js?v=50"></script>
+<script src="js/sf-somnia.js?v=50"></script>
+<script src="js/sf-report.js?v=50"></script>
+<script src="js/sf-widget.js?v=50"></script>
+<script src="js/sf-lang.js?v=50"></script>
+<script src="js/sf-i18n.js?v=50"></script>
+<script src="js/sf-boot.js?v=50"></script>
 </body>
 </html>

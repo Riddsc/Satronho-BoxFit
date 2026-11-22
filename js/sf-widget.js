@@ -27,6 +27,7 @@ function push(){
 }
 const ROWS = [['streak', '🔥 Racha'], ['kcal', '🔥 Calorías activas'], ['min', '⏱️ Minutos activos'], ['steps', '👟 Pasos'], ['water', '💧 Agua']];
 function settingsHTML(){
+  if (WEB) return '';
   const o = OPT();
   return `<div class="sect"><h4>WIDGET DEL TELÉFONO</h4>
     <p class="hint">Opcional. Para ponerlo: mantén presionada la pantalla de inicio del teléfono › <b>Widgets</b> › <b>Satronho BoxFit</b>. Para quitarlo, arrástralo fuera. Elige qué muestra:</p>

@@ -136,7 +136,7 @@ async function syncRem(ask){
 function renderSettings(){
   const top = $('#sfSetTop'), ex = $('#sfSetExtra'); if (!top || !ex) return;
   const lw = lastWeight(), a = ageOf(me), t = SFNutri.targets(), r = REM(), miss = SF.profileMissing();
-  top.innerHTML = `
+  top.innerHTML = `${WEB ? `<div class="sect"><h4>VERSIÓN WEB</h4>${webNote('Tus datos se guardan solo en este navegador, en este teléfono. Para usarla como app: en iPhone, abre la página en Safari › <b>Compartir</b> › <b>Agregar a pantalla de inicio</b>; en Android, menú de Chrome › <b>Agregar a la pantalla principal</b>. Haz una <b>copia de seguridad</b> de vez en cuando (abajo, en Datos): si borras los datos del navegador, se pierde todo.')}</div>` : ''}
     <button class="sfprofile" id="stMe"><span class="av">${me.name ? esc(initials(me.name)) : '👤'}</span><span class="l"><b>${me.name ? esc(me.name) : 'Mi perfil'}</b><small>${[a ? ageText(a) : '', me.height ? me.height + ' cm' : '', lw ? fmtKg(lw.kg) + ' kg' : ''].filter(Boolean).join(' · ') || 'Completa tus datos'}</small>${miss.length ? `<small style="color:#d6a660">Falta: ${miss.join(', ')}</small>` : `<small>En reposo gastas ≈${nf(SF.bmr())} kcal al día</small>`}</span><span class="arrow">›</span></button>
     <div class="sect"><h4>METAS Y PLAN</h4>
       <div class="row"><span class="pic" style="--c:#d98a78">🎯</span><div class="l"><b>Metas del día</b><small>${nf(G.kcal)} kcal · ${G.min} min · ${nf(G.steps)} pasos · ${SF.weekGoal()} días por semana</small></div><button class="smallbtn" id="stGoals">CAMBIAR</button></div>
@@ -152,12 +152,12 @@ function renderSettings(){
       <div class="row"><span class="sfcomp">${SFArt.badge(companion(), 46)}</span><div class="l"><b>${esc(gName())}</b><small>Te acompaña en todas las pantallas. MechaRidds boxeador siempre boxea en el timer.</small></div><button class="smallbtn" id="stComp">CAMBIAR</button></div></div>
     <div class="sect"><h4>SALUD</h4>
       <div class="row"><span class="pic" style="--c:#9d8fd0">🌙</span><div class="l"><b>Satronho Somnia</b><small>${SFSomnia.has() ? 'Sueño cruzado con tus entrenos' : 'Cruza tu sueño con tus entrenos'}</small></div><button class="smallbtn" id="stSleep">ABRIR</button></div>
-      <div class="row"><span class="pic" style="--c:#6fa8c4">⌚</span><div class="l"><b>Reloj y Health Connect</b><small>${SFHealth.hcOn() ? 'Conectado' : 'Pasos y pulso desde tu reloj u otras apps'}</small></div><button class="smallbtn" id="stHC">ABRIR</button></div></div>
+      <div class="row"><span class="pic" style="--c:#6fa8c4">⌚</span><div class="l"><b>Reloj y Health Connect</b><small>${WEB ? 'Solo en la app de Android' : SFHealth.hcOn() ? 'Conectado' : 'Pasos y pulso desde tu reloj u otras apps'}</small></div><button class="smallbtn" id="stHC">ABRIR</button></div></div>
     ${window.SFWidget ? SFWidget.settingsHTML() : ''}
     ${window.SFI18n ? SFI18n.settingsHTML() : ''}`;
   ex.innerHTML = `
     <div class="sect"><h4>RECORDATORIOS</h4>
-      ${LN ? '' : '<p class="hint">Funcionan en la app instalada en el teléfono.</p>'}
+      ${LN ? '' : webNote('Los recordatorios son notificaciones de la app de Android. En la versión web no llegan.')}
       <div class="row"><div class="l"><b>Hora de entrenar</b><small>Te aviso cada día para cuidar la racha</small></div><input type="time" id="rmT" class="ta" style="width:112px;margin:0;padding:6px 8px" value="${pad2(r.trainH)}:${pad2(r.trainM)}"><button class="switch ${r.train ? 'on' : ''}" data-rem="train"></button></div>
       <div class="row"><div class="l"><b>Anotar la comida</b><small>Todos los días a las 8:30 pm</small></div><button class="switch ${r.food ? 'on' : ''}" data-rem="food"></button></div>
       <div class="row"><div class="l"><b>Tomar agua</b><small>Cada dos horas, de 9 am a 7 pm</small></div><button class="switch ${r.water ? 'on' : ''}" data-rem="water"></button></div>
@@ -165,7 +165,7 @@ function renderSettings(){
     <div class="sect"><h4>REPORTE</h4>
       <div class="row"><span class="pic" style="--c:#d98585">📄</span><div class="l"><b>Exportar un reporte en PDF</b><small>Entrenos, comida, peso, salud y medallas del periodo que elijas. Solo cuando tú quieras.</small></div><button class="smallbtn" id="stPdf">CREAR</button></div></div>
     <div class="sect"><h4>MEDICIÓN</h4>
-      <div class="row"><div class="l"><b>Contar pasos con el teléfono</b><small>Usa el sensor del celular; los suma cada vez que abres la app</small></div><button class="switch ${S.stepSensor ? 'on' : ''}" id="stSteps"></button></div>
+      ${WEB ? '' : `      <div class="row"><div class="l"><b>Contar pasos con el teléfono</b><small>Usa el sensor del celular; los suma cada vez que abres la app</small></div><button class="switch ${S.stepSensor ? 'on' : ''}" id="stSteps"></button></div>`}
       <div class="row"><div class="l"><b>Unidad de las pesas</b></div><div class="seg" id="stUnit" style="margin:0;width:120px"><button type="button" data-u="kg">KG</button><button type="button" data-u="lb">LB</button></div></div>
       <div class="row"><div class="l"><b>Modo clase</b><small>El timer y las sesiones de boxeo no guardan nada (para prestar el celular o dar clase)</small></div><button class="switch ${S.noSave ? 'on' : ''}" id="stNoSave"></button></div>
     </div>`;
@@ -188,7 +188,7 @@ function renderSettings(){
   }));
   ex.querySelector('#stPdf').addEventListener('click', () => SFReport.open());
   ex.querySelector('#rmT').addEventListener('change', e => { const [h, m] = (e.target.value || '18:00').split(':').map(Number); const r2 = REM(); r2.trainH = h; r2.trainM = m || 0; S.rem = r2; saveSettings(); syncRem(); });
-  ex.querySelector('#stSteps').addEventListener('click', async e => { const b = e.currentTarget, on = !b.classList.contains('on'); b.classList.toggle('on', on); const ok = await SF.enableSteps(on); if (on && !ok) b.classList.remove('on'); });
+  if (ex.querySelector('#stSteps')) ex.querySelector('#stSteps').addEventListener('click', async e => { const b = e.currentTarget, on = !b.classList.contains('on'); b.classList.toggle('on', on); const ok = await SF.enableSteps(on); if (on && !ok) b.classList.remove('on'); });
   ex.querySelectorAll('#stUnit [data-u]').forEach(b => { b.classList.toggle('on', b.dataset.u === SFGym.unit()); b.addEventListener('click', () => { S.unit = b.dataset.u; saveSettings(); hapticTap(); ex.querySelectorAll('#stUnit [data-u]').forEach(x => x.classList.toggle('on', x === b)); }); });
   ex.querySelector('#stNoSave').addEventListener('click', e => { S.noSave = !S.noSave; saveSettings(); hapticTap(); e.currentTarget.classList.toggle('on', S.noSave); toast(S.noSave ? 'Modo clase: no se guarda nada' : 'Modo personal: todo vuelve a guardarse'); });
 }
