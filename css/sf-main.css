@@ -690,3 +690,5 @@ h4.mini{font-size:12px;letter-spacing:.14em;color:var(--dim);font-weight:700;mar
 .mslot .boxer{width:92px}
 
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+/* 4.4: durante el cambio de tema nada anima por su cuenta (todo cambia a la vez) */
+.notrans *,.notrans *::before,.notrans *::after{transition:none!important}

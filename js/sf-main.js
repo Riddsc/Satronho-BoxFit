@@ -1380,6 +1380,8 @@ function renderMe(){
       <div class="seg" id="meAgeMode">${[['birth','FECHA DE NACIMIENTO'],['age','EDAD EN AÑOS']].map(([k,l]) => `<button type="button" data-am="${k}" class="${mode === k ? 'on' : ''}">${l}</button>`).join('')}</div>
       <div id="meAgeIn" style="padding-bottom:12px"></div></div>
     <div class="sect"><h4>ALTURA</h4><div class="row" style="border:0"><div class="l"><b>Estatura</b><small>${me.height ? 'En centímetros. Toca el número para escribirlo.' : 'Sin guardar: escríbela o usa + y −.'}</small></div><div class="stepper" id="meH"></div></div></div>
+    <div class="sect"><h4>PESO</h4><div class="row" style="border:0"><div class="l"><b>${lw ? fmtKg(lw.kg) + ' kg' : 'Sin registrar'}</b><small>${lw ? 'Último registro: ' + niceDate(lw.date).toLowerCase() : 'Con tu peso se calculan tus calorías, tu IMC y tu categoría.'}</small></div><button class="smallbtn ${lw ? '' : 'go'}" id="meW">${lw ? 'ACTUALIZAR' : '+ REGISTRAR'}</button></div>
+      ${lw ? '<button class="linkbtn" id="meWAll" style="padding-bottom:10px">Ver mi historial de peso</button>' : ''}</div>
     <div class="sect"><h4>MIS DÍAS DE ENTRENO</h4><p class="hint">Marca los días que entrenas normalmente. Así el calendario cuenta solo tus faltas y tu cumplimiento.</p>
       <div class="daypick" id="mePlan">${[1,2,3,4,5,6,0].map(d => `<button type="button" data-pd="${d}" class="${me.plan.includes(d) ? 'on' : ''}">${WD[d]}</button>`).join('')}</div>
       <p class="hint" id="mePlanTxt"></p></div>
@@ -1405,6 +1407,8 @@ function renderMe(){
   const h = { v: me.height || 165 };
   makeStepper(body.querySelector('#meH'), { get:() => h.v, set:v => h.v = Math.round(v), min:80, max:230, input:true, label:'Altura en centímetros', fmt:v => me.height ? v : '—', onChange:() => { me.height = h.v; saveMe(); paintCards(); const st = body.querySelector('#meH'); if (st._paint) st._paint(); } });
   body.querySelectorAll('[data-pd]').forEach(b => b.addEventListener('click', () => { const d = +b.dataset.pd; me.plan = me.plan.includes(d) ? me.plan.filter(x => x !== d) : me.plan.concat(d); if (!me.planSince) me.planSince = todayISO(); b.classList.toggle('on'); saveMe(); hapticTap(); planTxt(); }));
+  body.querySelector('#meW').addEventListener('click', openWeightForm);
+  const wa = body.querySelector('#meWAll'); if (wa) wa.addEventListener('click', () => go('weight'));
   paintAge(); planTxt(); paintCards();
 }
 
@@ -1474,7 +1478,7 @@ function openWeightForm(){
       rec.date = sh.querySelector('#wkDate').value || todayISO();
       if (!me.height){ me.height = rec.h; saveMe(); }
       weights = weights.filter(w => w.date !== rec.date); // un registro por día
-      weights.push({ id: uid(), date: rec.date, kg: rec.kg }); saveW(); closeForm(); renderWeight(); Sound.win(); toast(`Peso guardado: ${fmtKg(rec.kg)} kg`);
+      weights.push({ id: uid(), date: rec.date, kg: rec.kg }); saveW(); closeForm(); renderWeight(); if (current === 'me') renderMe(); else if (current === 'home' && window.SFToday) SFToday.render(); Sound.win(); toast(`Peso guardado: ${fmtKg(rec.kg)} kg`);
     });
   });
 }
@@ -1798,19 +1802,21 @@ function paintTheme(){
   $$('#themeSeg [data-theme-set]').forEach(b => b.classList.toggle('on', b.dataset.themeSet === S.theme));
   if (current === 'roulette') drawWheel();
 }
-function applyTheme(next, originEl){
+function applyTheme(next){
   S.theme = next; saveSettings(); hapticTap();
-  const before = document.documentElement.dataset.theme;
-  const willBe = resolvedTheme();
-  if (before === willBe || !document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches){ paintTheme(); return; }
-  // revelado circular desde el botón
-  const r = (originEl || $('#themeBtn')).getBoundingClientRect();
-  const x = r.left + r.width/2, y = r.top + r.height/2, rad = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
-  const vt = document.startViewTransition(() => paintTheme());
-  vt.ready.then(() => document.documentElement.animate({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${rad}px at ${x}px ${y}px)`] }, { duration: 620, easing: 'cubic-bezier(.3,.8,.3,1)', pseudoElement: '::view-transition-new(root)' })).catch(()=>{});
+  const before = document.documentElement.dataset.theme, willBe = resolvedTheme();
+  if (before === willBe || matchMedia('(prefers-reduced-motion: reduce)').matches){ paintTheme(); return; }
+  // Cambio de un solo golpe (sin que cada tarjeta cambie de color a destiempo) y un fundido corto encima.
+  // Antes era un círculo con View Transitions: en Android se sentía lento y raro.
+  const veil = document.createElement('div');
+  veil.style.cssText = `position:fixed;inset:0;z-index:99999;pointer-events:none;background:${getComputedStyle(document.body).backgroundColor};opacity:1;transition:opacity .24s ease-out`;
+  document.body.appendChild(veil);
+  document.documentElement.classList.add('notrans');
+  paintTheme(); void document.body.offsetWidth;
+  requestAnimationFrame(() => { document.documentElement.classList.remove('notrans'); veil.style.opacity = '0'; setTimeout(() => veil.remove(), 300); });
 }
-$('#themeBtn').addEventListener('click', e => applyTheme(resolvedTheme() === 'light' ? 'dark' : 'light', e.currentTarget));
-$$('#themeSeg [data-theme-set]').forEach(b => b.addEventListener('click', e => applyTheme(b.dataset.themeSet, e.currentTarget)));
+$('#themeBtn').addEventListener('click', () => applyTheme(resolvedTheme() === 'light' ? 'dark' : 'light'));
+$$('#themeSeg [data-theme-set]').forEach(b => b.addEventListener('click', () => applyTheme(b.dataset.themeSet)));
 // Tamaño de letra: agranda toda la interfaz (zoom de CSS), se guarda en los ajustes
 function paintZoom(){ const z = +S.zoom || 1; document.documentElement.style.zoom = z === 1 ? '' : z; $$('#zoomSeg [data-zoom]').forEach(b => b.classList.toggle('on', +b.dataset.zoom === z)); }
 $$('#zoomSeg [data-zoom]').forEach(b => b.addEventListener('click', () => { S.zoom = +b.dataset.zoom; saveSettings(); hapticTap(); paintZoom(); window.dispatchEvent(new Event('resize')); }));
